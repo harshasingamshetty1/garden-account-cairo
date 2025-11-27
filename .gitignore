@@ -137,3 +137,6 @@ node.json
 
 *.DS_Store
 *.swp
+
+# cli
+./cli/base_deployed.json

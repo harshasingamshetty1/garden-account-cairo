@@ -1,0 +1,28 @@
+{
+  "name": "garden-account-cairo",
+  "version": "1.0.0",
+  "description": "For the Braavos Multi Owner Account (MOA) please refer to [README_MOA.md](./README_MOA.md)",
+  "main": "index.js",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "starknet": "^8.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "prettier": "^3.0.0"
+  },
+  "scripts": {
+    "format": "prettier --write '**/*.ts'"
+},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/harshasingamshetty1/garden-account-cairo.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/harshasingamshetty1/garden-account-cairo/issues"
+  },
+  "homepage": "https://github.com/harshasingamshetty1/garden-account-cairo#readme"
+}
