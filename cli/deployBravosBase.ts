@@ -42,7 +42,7 @@ async function submitDeployment(calldata: string[]) {
     },
     {
       skipValidate: true,
-    }
+    },
   );
   return result.transaction_hash;
 }

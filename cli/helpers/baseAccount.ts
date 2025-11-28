@@ -36,7 +36,7 @@ export function generateCredentials(baseClassHash?: string) {
     salt,
     baseClassHash || config.baseClassHash,
     constructorCalldata,
-    config.udcAddress
+    config.udcAddress,
   );
   return {
     privateKey,
@@ -50,14 +50,14 @@ export function generateCredentials(baseClassHash?: string) {
 export function buildUdcCalldata(
   baseClassHash: string,
   salt: string,
-  publicKey: string
+  publicKey: string,
 ) {
   return [baseClassHash, salt, "0x3", "0x1", publicKey];
 }
 
 export function buildFactoryCalldata(
   publicKey: string,
-  supplementalParams: bigint[]
+  supplementalParams: bigint[],
 ) {
   const hexEncoded = supplementalParams.map((value) => toHex(value));
   return [publicKey, supplementalParams.length.toString(), ...hexEncoded];

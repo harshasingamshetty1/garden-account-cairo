@@ -13,7 +13,7 @@ export function buildDeploymentParams(
       ? options.signerType
       : config.emptySignerType,
   );
-  const multisigThreshold = options.multisigThreshold ?? 0n;
+  const multisigThreshold = options.multisigThreshold ?? 1n;
   const withdrawalLimit = options.withdrawalLimit ?? 0n;
   const feeRate = options.feeRate ?? 0n;
   const starkFeeRate = options.starkFeeRate ?? 0n;
