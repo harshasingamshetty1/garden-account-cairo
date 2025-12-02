@@ -18,17 +18,11 @@ export type BaseAccountInfo = {
   classHash?: string;
 };
 
-export type DeclareResult = {
-  classHash: string;
-  transactionHash: string;
-};
-
-export type DeploymentParamsOptions = {
-  signerType?: DeploymentSignerType;
+export interface DeploymentParamsOptions {
   multisigThreshold?: bigint;
-  withdrawalLimit?: Uint128;
-  feeRate?: Uint128;
-  starkFeeRate?: Uint128;
-  secpX?: Uint128;
-  secpY?: Uint128;
-};
+  withdrawalLimit?: bigint;
+  feeRate?: bigint;
+  starkFeeRate?: bigint;
+  secpX?: bigint;
+  secpY?: bigint;
+}

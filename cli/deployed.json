@@ -1,0 +1,10 @@
+{
+  "privateKey": "0x2edf210fd139d5cef1580de56ec69c0f45678efefba245e8f3b5bfa5f63daef",
+  "publicKey": "0x5b250592ad76108576b961e3f9d2e9dd79f89fbc53555657cd5c1b63ef4d223",
+  "salt": "0x5b250592ad76108576b961e3f9d2e9dd79f89fbc53555657cd5c1b63ef4d223",
+  "address": "0x6ba41d63b10450dd3494ae0de4665a85f00767a20714ebeb11d03c41c260c2b",
+  "classHash": "0x3957f9f5a1cbfe918cedc2015c85200ca51a5f7506ecb6de98a5207b759bf8a",
+  "constructorCalldata": [
+    "0x5b250592ad76108576b961e3f9d2e9dd79f89fbc53555657cd5c1b63ef4d223"
+  ]
+}

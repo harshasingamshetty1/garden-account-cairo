@@ -1,18 +1,15 @@
-export const FIELD_P = BigInt(
-  "0x80000000000001100000000000000000000000000000000000000000000000001",
-);
-const U128_MASK = (1n << 128n) - 1n;
-
-export function toFelt(value: bigint): bigint {
-  const mod = value % FIELD_P;
-  return mod >= 0n ? mod : mod + FIELD_P;
-}
+export const U128_MASK = (1n << 128n) - 1n;
 
 export function splitUint128(value: bigint): [bigint, bigint] {
-  const normalized = value >= 0n ? value : value + (1n << 128n);
-  const low = normalized & U128_MASK;
-  const high = normalized >> 128n;
-  return [toFelt(low), toFelt(high)];
+  const low = value & U128_MASK;
+  const high = value >> 128n;
+  return [low, high];
+}
+
+export function toFelt(value: bigint | number | string): bigint {
+  const felt = BigInt(value);
+  const PRIME = 2n ** 251n + 17n * 2n ** 192n + 1n;
+  return felt % PRIME;
 }
 
 export function toUint256(value: bigint): [string, string] {

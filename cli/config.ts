@@ -1,31 +1,36 @@
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import dotenv from "dotenv";
 
-const configDir = path.dirname(fileURLToPath(import.meta.url));
-const projectRoot = path.resolve(configDir, "..");
+const configDir = path.join(process.cwd(), "cli");
+dotenv.config({ path: path.join(configDir, ".env") });
 
 export const config = {
-  nodeUrl: "http://127.0.0.1:5050/rpc",
-  chainId: BigInt("0x534e5f5345504f4c4941"), // sn sepolia shown in devnet idk chain
-  artifactDir: path.join(projectRoot, "target", "dev"),
-  sierraName: "braavos_account_BraavosAccount.contract_class.json",
-  baseSierraName: "braavos_account_BraavosBaseAccount.contract_class.json",
-  baseCasmName:
-    "braavos_account_BraavosBaseAccount.compiled_contract_class.json",
-  casmName: "braavos_account_BraavosAccount.compiled_contract_class.json",
-  deployerAddress:
-    "0x064b48806902a367c8598f4f95c305e8c1a1acba5f082d294a43793113115691",
-  deployerPrivateKey:
-    "0x0000000000000000000000000000000071d7bb07b9a64f6f78ac4c816aff4da9",
-  factoryAddress:
-    "0x03d94f65eBC7552Eb517DDb374250A9525b605f25F4E41ded6E7d7381Ff1c2e8",
-  baseClassHash:
-    "0x05b4b537eaa2399e3aa99c4e2e0208ebd6c71bc1467938cd52c798c601e43564",
-  udcAddress:
-    "0x41A78E741E5AF2FEC34B695679BC6891742439F7AFB8484ECD7766661AD02BF",
-  starknetTokenAddress:
-    "0x4718F5A0FC34CC1AF16A1CDEE98FFB20C31F5CD61D6AB07201858F4287C938D",
-  baseInfoFile: path.join(configDir, "base_deployed.json"),
-  emptySignerType: 0,
-  fundAmount: BigInt("1000000000000000000"),
+  nodeUrl: requireEnv("STARKNET_NODE_URL"),
+  chainId: requireEnv("CHAIN_ID"),
+  deployerAddress: requireEnv("DEPLOYER_ADDRESS"),
+  deployerPrivateKey: requireEnv("DEPLOYER_PRIVATE_KEY"),
+  credsFile: path.join(configDir, "deployed.json"),
+  fundAmount: BigInt(requireEnv("FUND_AMOUNT")),
 };
+
+export const FACTORY_ADDRESS =
+  "0x03d94f65eBC7552Eb517DDb374250A9525b605f25F4E41ded6E7d7381Ff1c2e8";
+export const STARKNET_TOKEN_ADDRESS =
+  "0x4718F5A0FC34CC1AF16A1CDEE98FFB20C31F5CD61D6AB07201858F4287C938D";
+export const BASE_CLASS_HASH =
+  "0x03d16c7a9a60b0593bd202f660a28c5d76e0403601d9ccc7e4fa253b6a70c201";
+export const BASE_INFO_FILE = path.join(configDir, "deployed.json");
+export const BRAAVOS_ACCOUNT_CLASS_HASH =
+  "0x03957f9f5a1cbfe918cedc2015c85200ca51a5f7506ecb6de98a5207b759bf8a";
+
+function requireEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(
+      `❌ Missing required environment variable: ${name}\n` +
+        `   Please set it in ${path.join(configDir, ".env")} or environment.\n` +
+        `   Example: ${name}=your_value_here`,
+    );
+  }
+  return value;
+}

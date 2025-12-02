@@ -4,7 +4,7 @@ import { RpcProvider, Account } from "starknet";
 export * from "./helpers/numeric";
 export * from "./helpers/deployment";
 export * from "./helpers/file";
-export * from "./helpers/baseAccount";
+export * from "./helpers/creds";
 
 export const provider = new RpcProvider({ nodeUrl: config.nodeUrl });
 export const deployer = new Account({

@@ -1,51 +1,62 @@
-import { config } from "../config";
-import { hash, ec } from "starknet";
-import { DeploymentParamsOptions } from "../types";
-import { splitUint128, toFelt, toUint256 } from "./numeric";
-import { deployer } from "../utils";
+import { CallData, ec, hash, provider } from "starknet";
+import {
+  BRAAVOS_ACCOUNT_CLASS_HASH,
+  config,
+  STARKNET_TOKEN_ADDRESS,
+} from "../config";
+import { DeploymentParamsOptions, DeploymentSignerType } from "../types";
+import { deployer, splitUint128, toFelt } from "../utils";
 
+/**
+ * Build deployment parameters for Braavos account (WITHOUT signature)
+ * Maps to AdditionalDeploymentParams struct (minus the signature field)
+ *
+ * struct AdditionalDeploymentParams {
+ *   account_implementation: ClassHash,        // 1
+ *   signer_type: SignerType,                  // 2
+ *   secp256r1_signer: Secp256r1PubKey,       // 3-6 (x_low, x_high, y_low, y_high)
+ *   multisig_threshold: usize,                // 7
+ *   withdrawal_limit_low: u128,               // 8
+ *   fee_rate: u128,                           // 9
+ *   stark_fee_rate: u128,                     // 10
+ *   chain_id: felt252,                        // 11
+ *   deployment_params_signature: (felt252, felt252), // Will be added after signing
+ * }
+ *
+ * Returns 11 parameters (signature r, s added separately after signing)
+ */
 export function buildDeploymentParams(
-  options: DeploymentParamsOptions = {},
-  classHash: string,
+  options: DeploymentParamsOptions,
 ): bigint[] {
-  const signerType = BigInt(
-    options.signerType !== undefined
-      ? options.signerType
-      : config.emptySignerType,
-  );
-  const multisigThreshold = options.multisigThreshold ?? 1n;
-  const withdrawalLimit = options.withdrawalLimit ?? 0n;
-  const feeRate = options.feeRate ?? 0n;
-  const starkFeeRate = options.starkFeeRate ?? 0n;
-  const secpX = options.secpX ?? 0n;
-  const secpY = options.secpY ?? 0n;
+  const signerType = BigInt(DeploymentSignerType.Empty);
+  const multisigThreshold = options.multisigThreshold; // 0 means no multisig
+  const withdrawalLimit = options.withdrawalLimit;
+  const feeRate = options.feeRate;
+  const starkFeeRate = options.starkFeeRate;
+  const secpX = options.secpX;
+  const secpY = options.secpY;
 
-  const [withdrawalLow, withdrawalHigh] = splitUint128(withdrawalLimit);
-  const [feeLow, feeHigh] = splitUint128(feeRate);
-  const [starkFeeLow, starkFeeHigh] = splitUint128(starkFeeRate);
-
-  const [secpXLow, secpXHigh] = splitUint128(secpX);
-  const [secpYLow, secpYHigh] = splitUint128(secpY);
+  const [secpXLow, secpXHigh] = splitUint128(secpX!);
+  const [secpYLow, secpYHigh] = splitUint128(secpY!);
 
   return [
-    BigInt(classHash),
-    toFelt(signerType),
-    secpXLow,
-    secpXHigh,
-    secpYLow,
-    secpYHigh,
-    toFelt(multisigThreshold),
-    withdrawalLow,
-    withdrawalHigh,
-    feeLow,
-    feeHigh,
-    starkFeeLow,
-    starkFeeHigh,
-    toFelt(config.chainId),
+    BigInt(BRAAVOS_ACCOUNT_CLASS_HASH), // 1 - account_implementation
+    toFelt(signerType), // 2 - signer_type
+    secpXLow, // 3 - secp256r1_signer.x_low (0 for Stark-only)
+    secpXHigh, // 4 - secp256r1_signer.x_high (0 for Stark-only)
+    secpYLow, // 5 - secp256r1_signer.y_low (0 for Stark-only)
+    secpYHigh, // 6 - secp256r1_signer.y_high (0 for Stark-only)
+    toFelt(multisigThreshold!), // 7 - multisig_threshold
+    toFelt(withdrawalLimit!), // 8 - withdrawal_limit_low
+    toFelt(feeRate!), // 9 - fee_rate
+    toFelt(starkFeeRate!), // 10 - stark_fee_rate
+    toFelt(config.chainId), // 11 - chain_id
+    // signature (r, s) will be added after signing: 12, 13
   ];
 }
 
 export function signAuxParams(params: bigint[], privateKey: string) {
+  // Normalize all params to felt strings
   const normalized = params.map((value) => toFelt(value).toString());
   const payloadHash = hash.computePoseidonHashOnElements(normalized);
   const signature = ec.starkCurve.sign(payloadHash, privateKey);
@@ -55,37 +66,40 @@ export function signAuxParams(params: bigint[], privateKey: string) {
   };
 }
 
-export const DEFAULT_RESOURCE_BOUNDS = {
-  l2_gas: { max_amount: 20000000n, max_price_per_unit: 1000000000n },
-  l1_gas: { max_amount: 20000000n, max_price_per_unit: 1000000000n },
-  l1_data_gas: { max_amount: 20000000n, max_price_per_unit: 1000000000n },
-};
+export function buildFactoryCalldata(
+  publicKey: string,
+  deploymentParams: bigint[],
+  signature: { r: bigint; s: bigint },
+): string[] {
+  const params = [
+    ...deploymentParams.map((p) => p.toString()),
+    signature.r.toString(),
+    signature.s.toString(),
+  ];
 
-export async function fundAccount(accountAddress: string) {
-  const [low, high] = toUint256(config.fundAmount);
-  console.log(`Funding ${accountAddress} with ${config.fundAmount}`);
-  const { transaction_hash } = await deployer.execute(
-    {
-      contractAddress: config.starknetTokenAddress,
-      entrypoint: "transfer",
-      calldata: [accountAddress, low, high],
-    },
-    {
-      skipValidate: true,
-      resourceBounds: DEFAULT_RESOURCE_BOUNDS,
-    },
-  );
-  return transaction_hash;
+  return [publicKey, params.length.toString(), ...params];
 }
 
-export function buildAccountAddress(
-  baseClassHash: string,
-  starkPubKey: string,
-) {
-  return hash.calculateContractAddressFromHash(
-    starkPubKey,
-    baseClassHash,
-    [starkPubKey],
-    "0x0",
-  );
+export async function fundAccount(accountAddress: string) {
+  const amount = config.fundAmount;
+  console.log(`Funding ${accountAddress} with ${config.fundAmount}`);
+
+  const amountUint256 = {
+    low: BigInt(amount),
+    high: 0n,
+  };
+
+  const { transaction_hash } = await deployer.execute([
+    {
+      contractAddress: STARKNET_TOKEN_ADDRESS,
+      entrypoint: "transfer",
+      calldata: CallData.compile({
+        recipient: accountAddress,
+        amount: amountUint256,
+      }),
+    },
+  ]);
+
+  console.log(`Transaction hash: ${transaction_hash}`);
+  return transaction_hash;
 }
