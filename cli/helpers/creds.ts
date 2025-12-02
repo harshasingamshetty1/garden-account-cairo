@@ -45,3 +45,18 @@ export function saveCreds(creds: BaseAccountInfo) {
   });
   console.log("Saved base credentials to", config.credsFile);
 }
+
+export interface Secp256r1SignerInfo {
+  privateKey: string; // hex string with 0x prefix
+  publicKeyX: string; // bigint as string
+  publicKeyY: string; // bigint as string
+}
+
+export function saveSigner(signerInfo: Secp256r1SignerInfo) {
+  writeJsonFile(config.signerFile, {
+    privateKey: signerInfo.privateKey,
+    publicKeyX: signerInfo.publicKeyX,
+    publicKeyY: signerInfo.publicKeyY,
+  });
+  console.log("Saved secp256r1 signer info to", config.signerFile);
+}

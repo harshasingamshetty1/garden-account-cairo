@@ -10,6 +10,7 @@ export const config = {
   deployerAddress: requireEnv("DEPLOYER_ADDRESS"),
   deployerPrivateKey: requireEnv("DEPLOYER_PRIVATE_KEY"),
   credsFile: path.join(configDir, "deployed.json"),
+  signerFile: path.join(configDir, "signer.json"),
   fundAmount: BigInt(requireEnv("FUND_AMOUNT")),
 };
 

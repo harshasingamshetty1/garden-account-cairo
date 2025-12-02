@@ -28,16 +28,22 @@ import { deployer, splitUint128, toFelt } from "../utils";
 export function buildDeploymentParams(
   options: DeploymentParamsOptions,
 ): bigint[] {
-  const signerType = BigInt(DeploymentSignerType.Empty);
+  const secpX = options.secpX || 0n;
+  const secpY = options.secpY || 0n;
+
+  // Set signer type to Secp256r1 if secp256r1 signer is provided, otherwise Empty
+  const signerType =
+    secpX !== 0n || secpY !== 0n
+      ? BigInt(DeploymentSignerType.Secp256r1)
+      : BigInt(DeploymentSignerType.Empty);
+
   const multisigThreshold = options.multisigThreshold; // 0 means no multisig
   const withdrawalLimit = options.withdrawalLimit;
   const feeRate = options.feeRate;
   const starkFeeRate = options.starkFeeRate;
-  const secpX = options.secpX;
-  const secpY = options.secpY;
 
-  const [secpXLow, secpXHigh] = splitUint128(secpX!);
-  const [secpYLow, secpYHigh] = splitUint128(secpY!);
+  const [secpXLow, secpXHigh] = splitUint128(secpX);
+  const [secpYLow, secpYHigh] = splitUint128(secpY);
 
   return [
     BigInt(BRAAVOS_ACCOUNT_CLASS_HASH), // 1 - account_implementation
