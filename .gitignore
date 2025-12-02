@@ -139,4 +139,4 @@ node.json
 *.swp
 
 # cli
-./cli/base_deployed.json
+cli/deployed.json
