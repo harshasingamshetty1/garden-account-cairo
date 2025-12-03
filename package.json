@@ -6,6 +6,8 @@
   "dependencies": {
     "@noble/curves": "^2.0.1",
     "dotenv": "^17.2.3",
+    "elliptic": "^6.6.1",
+    "secp256r1": "^0.0.3",
     "starknet": "^8.6.0"
   },
   "devDependencies": {
@@ -15,7 +17,10 @@
   "scripts": {
     "format": "prettier --write '**/*.ts'",
     "deploy": "tsx cli/deploy.ts",
-    "add-signer": "tsx cli/add_signer.ts"
+    "add-signer": "tsx cli/add_signer.ts",
+    "approve": "tsx cli/approval.ts",
+    "authorize": "tsx cli/authorize.ts",
+    "test-initiate": "tsx cli/test_initiate.ts"
   },
   "repository": {
     "type": "git",

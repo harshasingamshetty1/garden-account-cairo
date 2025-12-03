@@ -6,6 +6,7 @@ const ACCOUNT_VERSION: felt252 = '001.002.000';
 /// hardware signers, webauthn, multisig, daily withdrawal limits and more.
 #[starknet::contract(account)]
 mod BraavosAccount {
+    use UpgradableComponent::ISignerManagementInternal;
     use array::{ArrayTrait, SpanTrait};
     use box::BoxTrait;
     use braavos_account::account::interface;
@@ -463,7 +464,13 @@ mod BraavosAccount {
                     depl_params.secp256r1_signer, depl_params.signer_type,
                 );
 
-            num_signers += 1;
+            // Add additional stark signer if provided
+            assert(
+                depl_params.signer_public_key.pub_key.is_zero() == false, Errors::INVALID_SIGNER,
+            );
+            self.signers._add_stark_signer_unsafe(depl_params.signer_public_key);
+
+            num_signers += 2;
         }
 
         if (depl_params.multisig_threshold != 0) {

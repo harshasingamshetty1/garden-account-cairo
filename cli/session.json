@@ -1,0 +1,36 @@
+{
+  "sessionHash": "0x2b47d1090ab5a06d50fb0a63c096f1e23c835d7d19a015ec02d253f4774caed",
+  "caller": "0x07D0663801bBa26F2141333D7839b84cD7AD2887572af6B32f10EFfCb7e424bF",
+  "executeAfter": 1764750746,
+  "executeBefore": 1764840746,
+  "allowedMethods": [
+    {
+      "contractAddress": "0x06579d255314109429a4477d89629bc2b94f529ae01979c2f8014f9246482603",
+      "selector": "0x2aed25fcd0101fcece997d93f9d0643dfa3fbd4118cae16bf7d6cd533577c28"
+    },
+    {
+      "contractAddress": "0x06579d255314109429a4477d89629bc2b94f529ae01979c2f8014f9246482603",
+      "selector": "0x2ef0a97332ad048ac544d8dfacdd43e128b9816d599fdd0310960904fa18609"
+    },
+    {
+      "contractAddress": "0x06579d255314109429a4477d89629bc2b94f529ae01979c2f8014f9246482603",
+      "selector": "0x3d967966e6b0ea40f78dff297fed3b472763137dac6cf564d7263e918f425ef"
+    }
+  ],
+  "spendingLimits": [
+    {
+      "tokenAddress": "0x496bef3ed20371382fbe0ca6a5a64252c5c848f9f1f0cccf8110fc4def912d5",
+      "amount": {
+        "low": "0xffffffffffffffffffffffffffffffff",
+        "high": "0xffffffffffffffffffffffffffffffff"
+      }
+    }
+  ],
+  "signature": [
+    "957505725620726378260108582258892009596637203237233644031108781099006775801",
+    "1792014980751828416741220980697698034510621731582880674620589317787656046915"
+  ],
+  "htlcAddress": "0x06579d255314109429a4477d89629bc2b94f529ae01979c2f8014f9246482603",
+  "braavosAccount": "0x22d36a13098b3cbf443f74de81a2d4492d50a7bd5912182b5c74464fe99514c",
+  "createdAt": "2025-12-03T09:32:28.718Z"
+}

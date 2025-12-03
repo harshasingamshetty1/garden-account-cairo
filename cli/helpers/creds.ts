@@ -1,8 +1,15 @@
 import fs from "fs";
 import { BASE_CLASS_HASH, config } from "../config";
-import { hash, ec, stark } from "starknet";
-import { BaseAccountInfo } from "../types";
+import { hash, ec, stark, CallData } from "starknet";
+import {
+  AddSignerInfo,
+  BaseAccountInfo,
+  DeploymentSignerType,
+  Secp256r1KeyPair,
+  SignerInfo,
+} from "../types";
 import { readJsonFile, writeJsonFile } from "./file";
+import { formatPublicKey } from "./secp256r1";
 
 export function generateCreds() {
   const privateKey = stark.randomAddress();
@@ -25,38 +32,19 @@ export function generateCreds() {
   };
 }
 
-export function readCreds(): BaseAccountInfo {
-  const filePath = config.credsFile;
-  if (!fs.existsSync(filePath)) {
-    throw new Error(`Base credentials not found at ${filePath}.`);
-  }
+export function buildAddSignerCall(
+  accountAddress: string,
+  keyPair: Secp256r1KeyPair,
+) {
+  const formattedPubKey = formatPublicKey(keyPair.publicKey);
 
-  return readJsonFile<BaseAccountInfo>(filePath);
-}
-
-export function saveCreds(creds: BaseAccountInfo) {
-  writeJsonFile(config.credsFile, {
-    privateKey: creds.privateKey,
-    publicKey: creds.publicKey,
-    salt: creds.salt,
-    address: creds.address,
-    classHash: creds.classHash,
-    constructorCalldata: creds.constructorCalldata,
-  });
-  console.log("Saved base credentials to", config.credsFile);
-}
-
-export interface Secp256r1SignerInfo {
-  privateKey: string; // hex string with 0x prefix
-  publicKeyX: string; // bigint as string
-  publicKeyY: string; // bigint as string
-}
-
-export function saveSigner(signerInfo: Secp256r1SignerInfo) {
-  writeJsonFile(config.signerFile, {
-    privateKey: signerInfo.privateKey,
-    publicKeyX: signerInfo.publicKeyX,
-    publicKeyY: signerInfo.publicKeyY,
-  });
-  console.log("Saved secp256r1 signer info to", config.signerFile);
+  return {
+    contractAddress: accountAddress,
+    entrypoint: "add_secp256r1_signer",
+    calldata: CallData.compile({
+      secp256r1_signer: formattedPubKey,
+      signer_type: DeploymentSignerType.Secp256r1,
+      multisig_threshold: 0, // No multisig - any signer can sign independently
+    }),
+  };
 }

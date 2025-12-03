@@ -1,3 +1,5 @@
+import { TypedData, typedData as typedDataUtils } from "starknet";
+
 export const U128_MASK = (1n << 128n) - 1n;
 
 export function splitUint128(value: bigint): [bigint, bigint] {
@@ -19,4 +21,15 @@ export function toUint256(value: bigint): [string, string] {
 
 export function toHex(value: bigint): string {
   return `0x${toFelt(value).toString(16)}`;
+}
+
+/**
+ * Calculate the session hash from typed data
+ */
+export function calculateSessionHash(
+  typedDataObj: TypedData,
+  accountAddress: string,
+): string {
+  const msgHash = typedDataUtils.getMessageHash(typedDataObj, accountAddress);
+  return msgHash;
 }
