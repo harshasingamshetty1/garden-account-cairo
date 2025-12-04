@@ -1,0 +1,42 @@
+{
+  "sessionType": "GasSponsoredSessionV2",
+  "sessionVersion": "V2",
+  "braavosAccountAddress": "0x0632e084b86F1f7ea218E05e8c21C15bFb2C6Bde1C7877725ed3F18398627153",
+  "chainId": "0x534e5f5345504f4c4941",
+  "sessionHash": "0xc8180f08569f3d1d1c57370594b8fd95e172c6d22c409c0ccad1a745594b1f",
+  "executeAfter": "1764829546",
+  "executeBefore": "2080193146",
+  "sessionCaller": "0x048248450B72751Ab65c354940e89b0b8BabF281B212E31eD8F318DF43F57954",
+  "sessionCallerPrivateKey": "0x04af2268a8095d1d3903aacfbe3a37489c9117c55f4d006e75088d7e90445ce3",
+  "allowedMethods": [
+    {
+      "contractAddress": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+      "selector": "transfer",
+      "selectorHex": "0x83afd3f4caedc6eebf44246fe54e38c95e3179a5ec9ea81740eca5b482d12e",
+      "guid": "0x4cc7eb6df756efe173288ce33f9de551a3dc159c415be7720edc4852536d981",
+      "calldataValidations": [
+        {
+          "offset": 1,
+          "value": "0xde0b6b3a7640000",
+          "validationType": 0
+        },
+        {
+          "offset": 2,
+          "value": "0x0",
+          "validationType": 0
+        }
+      ]
+    }
+  ],
+  "spendingLimits": [
+    {
+      "tokenAddress": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+      "amount": "9000000000000000000"
+    }
+  ],
+  "restrictedAmount": "1000000000000000000",
+  "signature": {
+    "r": "0x6a323069b3e26e7db95d3a9ef35dcdec64922e3323e21bc838a2ef9c63c4e66",
+    "s": "0x4e4eac9cfd156f0658c68eef150241fadc443f351928580845cf7cf2df8c8ab"
+  }
+}

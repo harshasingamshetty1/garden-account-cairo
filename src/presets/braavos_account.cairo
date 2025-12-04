@@ -16,7 +16,7 @@ mod BraavosAccount {
     use braavos_account::sessions::sessions::SessionComponent;
     use braavos_account::sessions::utils::is_session_execute;
     use braavos_account::signers::multisig::MultisigComponent;
-    use braavos_account::signers::signer_address_mgt::{any, any_strong_signer, get_first_signer};
+    use braavos_account::signers::signer_address_mgt::{any, any_strong_signer, get_first_signer, add_signer};
     use braavos_account::signers::signer_management::{
         PUBLIC_KEY_LEN_SECP256R1, RS_LEN_SECP256R1, SIG_LEN_STARK, SignerManagementComponent,
     };

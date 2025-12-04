@@ -65,15 +65,15 @@ async function deployBraavosAccount() {
 
 deployBraavosAccount()
   .then(async (d) => {
-    const txHash = await fundAccount(d.address);
-    const receipt = await provider.waitForTransaction(txHash, {
-      retryInterval: 5000,
-    });
-    if (!receipt.isSuccess) {
-      throw new Error("Transaction failed");
-    }
-    console.log("Funding successful!");
-    console.log(`Transaction: ${txHash}`);
+    // const txHash = await fundAccount(d.address);
+    // const receipt = await provider.waitForTransaction(txHash, {
+    //   retryInterval: 5000,
+    // });
+    // if (!receipt.isSuccess) {
+    //   throw new Error("Transaction failed");
+    // }
+    // console.log("Funding successful!");
+    // console.log(`Transaction: ${txHash}`);
   })
   .catch((error) => {
     console.error("\n❌ Deployment failed:", error.message);

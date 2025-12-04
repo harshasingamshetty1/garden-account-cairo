@@ -140,3 +140,4 @@ node.json
 
 # cli
 cli/deployed.json
+node_modules
