@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import { provider } from "../utils";
 import { readJsonFile } from "../helpers/file";
-import { Account, Call, CallData, hash } from "starknet";
+import { Account, Call, hash } from "starknet";
 import path from "path";
-import { config } from "../config";
+import { config } from "../config/constants";
 
 interface SessionInfo {
   sessionHash: string;

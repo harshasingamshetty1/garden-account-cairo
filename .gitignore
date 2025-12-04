@@ -138,5 +138,6 @@ node.json
 *.DS_Store
 *.swp
 
-# cli
-cli/deployed.json
+# cli - ignore all data files
+cli/data/*.json
+cli/.env

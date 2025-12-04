@@ -1,0 +1,19 @@
+{
+  "whitelistAddress": "0x0000000000000000000000000000000000000000000000000000000000000000",
+  "whitelistTokenAddresses": [""],
+  "permissionAddress": "0x07D0663801bBa26F2141333D7839b84cD7AD2887572af6B32f10EFfCb7e424bF",
+  "htlcAddress": "0x06579d255314109429a4477d89629bc2b94f529ae01979c2f8014f9246482603",
+  "htlcTokenAddress": "0x496bef3ed20371382fbe0ca6a5a64252c5c848f9f1f0cccf8110fc4def912d5",
+  "deployment": {
+    "fundAmount": "1000000000000000000",
+    "feeRate": "0",
+    "starkFeeRate": "0",
+    "withdrawalLimit": "0",
+    "multisigThreshold": "0",
+    "addSignerMultisigThreshold": "0"
+  },
+  "session": {
+    "executeAfterOffset": 3600,
+    "executeBeforeDuration": 86400
+  }
+}

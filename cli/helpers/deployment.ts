@@ -1,9 +1,9 @@
-import { CallData, ec, hash, provider } from "starknet";
+import { CallData, ec, hash } from "starknet";
 import {
   BRAAVOS_ACCOUNT_CLASS_HASH,
   config,
   STARKNET_TOKEN_ADDRESS,
-} from "../config";
+} from "../config/constants";
 import { DeploymentParamsOptions, DeploymentSignerType } from "../types";
 import { deployer, splitUint128, toFelt } from "../utils";
 
@@ -72,23 +72,9 @@ export function signAuxParams(params: bigint[], privateKey: string) {
   };
 }
 
-export function buildFactoryCalldata(
-  publicKey: string,
-  deploymentParams: bigint[],
-  signature: { r: bigint; s: bigint },
-): string[] {
-  const params = [
-    ...deploymentParams.map((p) => p.toString()),
-    signature.r.toString(),
-    signature.s.toString(),
-  ];
-
-  return [publicKey, params.length.toString(), ...params];
-}
-
 export async function fundAccount(accountAddress: string) {
-  const amount = config.fundAmount;
-  console.log(`Funding ${accountAddress} with ${config.fundAmount}`);
+  const amount = config.deployment.fundAmount;
+  console.log(`Funding ${accountAddress} with ${config.deployment.fundAmount}`);
 
   const amountUint256 = {
     low: BigInt(amount),

@@ -1,11 +1,6 @@
 import fs from "fs";
-import {
-  AddSignerInfo,
-  BaseAccountInfo,
-  Secp256r1KeyPair,
-  SignerInfo,
-} from "../types";
-import { config } from "../config";
+import path from "path";
+import { AddSignerInfo, Secp256r1KeyPair, SignerInfo } from "../types";
 
 const ASCII_ENCODING: BufferEncoding = "ascii";
 const JSON_SPACES = 2;
@@ -16,18 +11,15 @@ export function readJsonFile<T>(location: string): T {
 }
 
 export function writeJsonFile(location: string, payload: unknown) {
+  // Ensure directory exists
+  const dir = path.dirname(location);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+
   fs.writeFileSync(location, JSON.stringify(payload, null, JSON_SPACES), {
     encoding: ASCII_ENCODING,
   });
-}
-
-export function readCreds(): BaseAccountInfo {
-  const filePath = config.credsFile;
-  if (!fs.existsSync(filePath)) {
-    throw new Error(`Base credentials not found at ${filePath}.`);
-  }
-
-  return readJsonFile<BaseAccountInfo>(filePath);
 }
 
 export function loadSignerStorage(filePath: string): AddSignerInfo {
@@ -39,18 +31,6 @@ export function loadSignerStorage(filePath: string): AddSignerInfo {
       addedAt: new Date().toISOString(),
     };
   }
-}
-
-export function saveCreds(creds: BaseAccountInfo) {
-  writeJsonFile(config.credsFile, {
-    privateKey: creds.privateKey,
-    publicKey: creds.publicKey,
-    salt: creds.salt,
-    address: creds.address,
-    classHash: creds.classHash,
-    constructorCalldata: creds.constructorCalldata,
-  });
-  console.log("Saved base credentials to", config.credsFile);
 }
 
 export function saveSignerInfo(

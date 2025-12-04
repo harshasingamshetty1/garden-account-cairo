@@ -1,7 +1,8 @@
-import { BASE_CLASS_HASH } from "../config";
-import { hash, ec, stark, CallData } from "starknet";
-import { DeploymentSignerType, Secp256r1KeyPair } from "../types";
-import { formatPublicKey } from "./secp256r1";
+import fs from "fs";
+import { BASE_CLASS_HASH, config } from "../config/constants";
+import { hash, ec, stark } from "starknet";
+import { readJsonFile, writeJsonFile } from "./file";
+import { BaseAccountInfo } from "../types";
 
 export function generateCreds() {
   const privateKey = stark.randomAddress();
@@ -24,19 +25,23 @@ export function generateCreds() {
   };
 }
 
-export function buildAddSignerCall(
-  accountAddress: string,
-  keyPair: Secp256r1KeyPair,
-) {
-  const formattedPubKey = formatPublicKey(keyPair.publicKey);
+export function readCreds(): BaseAccountInfo {
+  const filePath = config.credsFile;
+  if (!fs.existsSync(filePath)) {
+    throw new Error(`Base credentials not found at ${filePath}.`);
+  }
 
-  return {
-    contractAddress: accountAddress,
-    entrypoint: "add_secp256r1_signer",
-    calldata: CallData.compile({
-      secp256r1_signer: formattedPubKey,
-      signer_type: DeploymentSignerType.Secp256r1,
-      multisig_threshold: 0, // No multisig - any signer can sign independently
-    }),
-  };
+  return readJsonFile<BaseAccountInfo>(filePath);
+}
+
+export function saveCreds(creds: BaseAccountInfo) {
+  writeJsonFile(config.credsFile, {
+    privateKey: creds.privateKey,
+    publicKey: creds.publicKey,
+    salt: creds.salt,
+    address: creds.address,
+    classHash: creds.classHash,
+    constructorCalldata: creds.constructorCalldata,
+  });
+  console.log("Saved base credentials to", config.credsFile);
 }

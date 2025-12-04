@@ -1,6 +1,6 @@
 import { TypedData, typedData as typedDataUtils } from "starknet";
 
-export const U128_MASK = BigInt(1) << (BigInt(128) - BigInt(1));
+export const U128_MASK = (BigInt(1) << BigInt(128)) - BigInt(1);
 
 export function splitUint128(value: bigint): [bigint, bigint] {
   const low = value & U128_MASK;

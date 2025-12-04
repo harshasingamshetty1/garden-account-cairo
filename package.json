@@ -4,6 +4,7 @@
   "description": "For the Braavos Multi Owner Account (MOA) please refer to [README_MOA.md](./README_MOA.md)",
   "main": "index.js",
   "dependencies": {
+    "@ledgerhq/hw-transport-node-hid": "^6.29.14",
     "@noble/curves": "^2.0.1",
     "dotenv": "^17.2.3",
     "elliptic": "^6.6.1",
@@ -16,11 +17,15 @@
   "scripts": {
     "build": "scarb build && tsc cli/*.ts",
     "format": "prettier --write '**/*.ts'",
-    "deploy": "tsx cli/deploy.ts",
-    "add-signer": "tsx cli/add_signer.ts",
-    "approve": "tsx cli/approval.ts",
-    "authorize": "tsx cli/authorize.ts",
-    "test-initiate": "tsx cli/tests/test_initiate.ts"
+    "start": "tsx cli/index.ts",
+    "deploy": "tsx cli/scripts/deploy.ts",
+    "approve": "tsx cli/scripts/approval.ts",
+    "authorize": "tsx cli/scripts/authorize.ts",
+    "whitelist": "tsx cli/scripts/whitelist.ts",
+    "add-signer": "tsx cli/scripts/add_signer.ts",
+    "test-initiate": "tsx cli/tests/test_initiate.ts initiate 0x07a55af245d4a6105770e701868e364375fe48ff2b2d8ac6a3c712cc01beca26 3600 0.0001 0x0cbd0a5e,0xd68a0942,0xc7f2a01f,0x0578a41d,0x05a16814,0x501fc9e3,0xef67f1ec,0xef7f30ee",
+    "test:ledger": "tsx cli/tests/ledger_signing.ts",
+    "test:signature": "tsx cli/tests/signature_format_demo.ts"
   },
   "repository": {
     "type": "git",

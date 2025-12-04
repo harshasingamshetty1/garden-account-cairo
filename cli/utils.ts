@@ -1,4 +1,4 @@
-import { config } from "./config";
+import { config } from "./config/constants";
 import { RpcProvider, Account } from "starknet";
 import { BaseAccountInfo } from "./types";
 
@@ -20,5 +20,6 @@ export function getBravosAccount(creds: BaseAccountInfo) {
     provider,
     address: creds.address,
     signer: creds.privateKey,
+    cairoVersion: "1",
   });
 }
