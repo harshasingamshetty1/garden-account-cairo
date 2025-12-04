@@ -1,5 +1,6 @@
 import { config } from "./config";
 import { RpcProvider, Account } from "starknet";
+import { BaseAccountInfo } from "./types";
 
 export * from "./helpers/numeric";
 export * from "./helpers/deployment";
@@ -13,3 +14,11 @@ export const deployer = new Account({
   address: config.deployerAddress,
   signer: config.deployerPrivateKey,
 });
+
+export function getBravosAccount(creds: BaseAccountInfo) {
+  return new Account({
+    provider,
+    address: creds.address,
+    signer: creds.privateKey,
+  });
+}

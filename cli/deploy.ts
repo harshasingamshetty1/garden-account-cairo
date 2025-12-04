@@ -8,10 +8,8 @@ import {
   generateCreds,
   provider,
   saveCreds,
-  saveSigner,
   signAuxParams,
 } from "./utils";
-import { generateSecp256r1KeyPair } from "./helpers/secp256r1";
 
 async function deployBraavosAccount() {
   console.log("🚀 Deploying Braavos Account\n");
@@ -19,16 +17,16 @@ async function deployBraavosAccount() {
   console.log(`📍 Address: ${creds.address}`);
 
   // Generate mock secp256r1 signer (hardware wallet imitation)
-  const secp256r1KeyPair = generateSecp256r1KeyPair();
-  console.log(`🔐 Generated secp256r1 signer (hardware wallet):`);
-  console.log(`   X: ${secp256r1KeyPair.publicKey.x.toString()}`);
-  console.log(`   Y: ${secp256r1KeyPair.publicKey.y.toString()}\n`);
+  // const secp256r1KeyPair = generateSecp256r1KeyPair();
+  // console.log(`🔐 Generated secp256r1 signer (hardware wallet):`);
+  // console.log(`   X: ${secp256r1KeyPair.publicKey.x.toString()}`);
+  // console.log(`   Y: ${secp256r1KeyPair.publicKey.y.toString()}\n`);
 
   const deploymentParams = buildDeploymentParams({
     feeRate: 0n,
     multisigThreshold: 0n,
-    secpX: secp256r1KeyPair.publicKey.x,
-    secpY: secp256r1KeyPair.publicKey.y,
+    secpX: 0n, // secp256r1KeyPair.publicKey.x,
+    secpY: 0n, // secp256r1KeyPair.publicKey.y,
     starkFeeRate: 0n,
     withdrawalLimit: 0n,
   });
@@ -57,13 +55,13 @@ async function deployBraavosAccount() {
   saveCreds({ ...creds, classHash });
 
   // Save secp256r1 signer info
-  const privateKeyHex =
-    "0x" + Buffer.from(secp256r1KeyPair.privateKey).toString("hex");
-  saveSigner({
-    privateKey: privateKeyHex,
-    publicKeyX: secp256r1KeyPair.publicKey.x.toString(),
-    publicKeyY: secp256r1KeyPair.publicKey.y.toString(),
-  });
+  // const privateKeyHex =
+  //   "0x" + Buffer.from(secp256r1KeyPair.privateKey).toString("hex");
+  // saveSigner({
+  //   privateKey: privateKeyHex,
+  //   publicKeyX: secp256r1KeyPair.publicKey.x.toString(),
+  //   publicKeyY: secp256r1KeyPair.publicKey.y.toString(),
+  // });
 
   if (!receipt.isSuccess) {
     throw new Error("Transaction failed");
