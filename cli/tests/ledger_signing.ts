@@ -213,6 +213,8 @@ async function demoGetPublicKey() {
   return pubKeyData;
 }
 
+export { getPublicKeyFromLedger, demoGetPublicKey };
+
 /**
  * Example: Sign a simple typed data message
  */
