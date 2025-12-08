@@ -47,11 +47,11 @@ export function createGasSponsoredSessionTypedDataV2(
         { name: "Execute Before", type: "timestamp" },
         { name: "Allowed Methods", type: "AllowedMethod*" },
         { name: "Spending Limits", type: "TokenAmount*" },
-        { name: "Calldata Validations", type: "CalldataValidation**" },
       ],
       AllowedMethod: [
         { name: "Contract Address", type: "ContractAddress" },
         { name: "Selector", type: "selector" },
+        { name: "Calldata Validations", type: "CalldataValidation**" },
       ],
       TokenAmount: [
         { name: "token_address", type: "ContractAddress" },
@@ -78,9 +78,14 @@ export function createGasSponsoredSessionTypedDataV2(
       Caller: caller,
       "Execute After": executeAfter.toString(),
       "Execute Before": executeBefore.toString(),
-      "Allowed Methods": allowedMethods.map((method) => ({
+      "Allowed Methods": allowedMethods.map((method, index) => ({
         "Contract Address": method.contractAddress,
         Selector: method.selector,
+        "Calldata Validations": calldataValidations[index].map((validation) => ({
+          Offset: validation.offset.toString(),
+          Value: validation.value,
+          "Validation Type": validation.validation_type.toString(),
+        })),
       })),
       "Spending Limits": spendingLimits.map((limit) => ({
         token_address: limit.tokenAddress,
@@ -89,13 +94,6 @@ export function createGasSponsoredSessionTypedDataV2(
           high: limit.amount.high,
         },
       })),
-      "Calldata Validations": calldataValidations.map((validations) =>
-        validations.map((validation) => ({
-          Offset: validation.offset.toString(),
-          Value: validation.value,
-          "Validation Type": validation.validation_type.toString(),
-        })),
-      ),
     },
   };
 }

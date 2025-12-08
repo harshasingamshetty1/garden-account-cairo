@@ -57,6 +57,6 @@ async function verifyAllowance(
   }
 }
 
-// if (require.main === module) {
-//   approveHTLCTokens();
-// }
+if (require.main === module) {
+  approveHTLCTokens();
+}

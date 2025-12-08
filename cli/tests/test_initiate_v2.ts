@@ -5,7 +5,13 @@ import { Account, Call, hash } from "starknet";
 import path from "path";
 import { config } from "../config/constants";
 
-interface SessionInfo {
+interface CalldataValidation {
+  offset: number;
+  value: string;
+  validation_type: number;
+}
+
+interface SessionInfoV2 {
   sessionHash: string;
   caller: string;
   executeAfter: number;
@@ -13,6 +19,7 @@ interface SessionInfo {
   allowedMethods: Array<{
     contractAddress: string;
     selector: string;
+    calldataValidations?: CalldataValidation[];
   }>;
   spendingLimits: Array<{
     tokenAddress: string;
@@ -25,38 +32,68 @@ interface SessionInfo {
 }
 
 /**
- * Parse allowed method GUIDs for V1 sessions
- * For V1, the GUID is just a hash of type_hash + contract address + selector
+ * Parse allowed method GUIDs for V2 sessions
+ * For V2, the GUID includes calldata validations
  * Matches the Cairo implementation in sessions/hash.cairo
  */
-function getAllowedMethodGuids(
-  allowedMethods: Array<{ contractAddress: string; selector: string }>,
+function getAllowedMethodGuidsV2(
+  allowedMethods: Array<{
+    contractAddress: string;
+    selector: string;
+    calldataValidations?: CalldataValidation[];
+  }>,
 ): string[] {
-  // ALLOWED_METHOD_TYPE_HASH for V1 sessions (no calldata validations)
+  // ALLOWED_METHOD_TYPE_HASH for V2 sessions (with calldata validations)
   const ALLOWED_METHOD_TYPE_HASH = hash.getSelectorFromName(
-    '"AllowedMethod"("Contract Address":"ContractAddress","Selector":"selector")',
+    '"AllowedMethod"("Contract Address":"ContractAddress","Selector":"selector","Calldata Validations":"CalldataValidation**")',
+  );
+
+  const CALLDATA_VALIDATION_TYPE_HASH = hash.getSelectorFromName(
+    '"CalldataValidation"("Offset":"u128","Value":"felt","Validation Type":"u128")',
   );
 
   return allowedMethods.map((method) => {
-    // For V1: Hash: [type_hash, contract_address, selector]
-    // This matches hash_allowed_method in sessions/hash.cairo for V1
+    const validations = method.calldataValidations || [];
+
+    // Hash calldata validations
+    const validationHashes = validations.map((v) =>
+      hash.computePoseidonHashOnElements([
+        CALLDATA_VALIDATION_TYPE_HASH,
+        v.offset.toString(),
+        v.value,
+        v.validation_type.toString(),
+      ]),
+    );
+
+    // Hash the array of validation hashes
+    // For empty span: just hash the length (0)
+    const validationsHash =
+      validationHashes.length > 0
+        ? hash.computePoseidonHashOnElements([
+            validationHashes.length.toString(),
+            ...validationHashes,
+          ])
+        : hash.computePoseidonHashOnElements([validationHashes.length.toString()]);
+
+    // For V2: Hash: [type_hash, contract_address, selector, validations_hash]
     return hash.computePoseidonHashOnElements([
       ALLOWED_METHOD_TYPE_HASH,
       method.contractAddress,
       method.selector,
+      validationsHash,
     ]);
   });
 }
 
 /**
- * Build calldata for execute_gas_sponsored_session_tx
+ * Build calldata for execute_gas_sponsored_session_tx_v2
  */
-function buildGasSponsoredSessionCalldata(
-  sessionInfo: SessionInfo,
+function buildGasSponsoredSessionCalldataV2(
+  sessionInfo: SessionInfoV2,
   calls: Call[],
   callHints: number[],
 ): string[] {
-  const allowedMethodGuids = getAllowedMethodGuids(sessionInfo.allowedMethods);
+  const allowedMethodGuids = getAllowedMethodGuidsV2(sessionInfo.allowedMethods);
 
   const calldata: string[] = [];
 
@@ -66,7 +103,7 @@ function buildGasSponsoredSessionCalldata(
   // Execute before (u64)
   calldata.push(sessionInfo.executeBefore.toString());
 
-  // Allowed methods (length + guids)
+  // Allowed methods GUIDs (length + guids)
   calldata.push(allowedMethodGuids.length.toString());
   calldata.push(...allowedMethodGuids);
 
@@ -78,7 +115,18 @@ function buildGasSponsoredSessionCalldata(
     calldata.push(limit.amount.high);
   }
 
-  // V1 sessions don't have calldata validations - skip that field
+  // Calldata validations (V2 only) - Span<Span<CalldataValidation>>
+  // Outer array: one per method
+  calldata.push(sessionInfo.allowedMethods.length.toString());
+  for (const method of sessionInfo.allowedMethods) {
+    const validations = method.calldataValidations || [];
+    calldata.push(validations.length.toString());
+    for (const validation of validations) {
+      calldata.push(validation.offset.toString());
+      calldata.push(validation.value);
+      calldata.push(validation.validation_type.toString());
+    }
+  }
 
   // Calls - Span<Call> format: [length, call1_to, call1_selector, call1_calldata_len, ...call1_calldata, ...]
   calldata.push(calls.length.toString()); // Number of calls
@@ -103,8 +151,8 @@ function buildGasSponsoredSessionCalldata(
   return calldata;
 }
 
-async function executeSessionTransaction() {
-  console.log("🚀 HTLC Session Execute Script\n");
+async function executeSessionTransactionV2() {
+  console.log("🚀 HTLC Session Execute Script (V2)\n");
 
   try {
     // Read session info
@@ -113,7 +161,7 @@ async function executeSessionTransaction() {
       "session.json",
     );
 
-    const sessionInfo = readJsonFile<SessionInfo>(sessionFile);
+    const sessionInfo = readJsonFile<SessionInfoV2>(sessionFile);
     console.log(`📄 Loaded session from: ${sessionFile}`);
     console.log(`   Session Hash: ${sessionInfo.sessionHash}`);
     console.log(`   Braavos Account: ${sessionInfo.braavosAccount}`);
@@ -178,7 +226,7 @@ async function executeSessionTransaction() {
     if (!operation || !["initiate", "redeem", "refund"].includes(operation)) {
       console.error(`❌ Error: Invalid or missing operation`);
       console.error(
-        `   Usage: tsx cli/session-execute.ts --function <operation> [args...]`,
+        `   Usage: tsx cli/tests/test_initiate_v2.ts --function <operation> [args...]`,
       );
       console.error(`   Operations: initiate, redeem, refund`);
       process.exit(1);
@@ -187,7 +235,6 @@ async function executeSessionTransaction() {
     console.log(`📋 Operation: ${operation}`);
 
     // Build the call based on operation
-    // Note: You'll need to adjust the calldata based on your HTLC contract's actual interface
     let htlcCall: Call;
 
     switch (operation) {
@@ -195,12 +242,12 @@ async function executeSessionTransaction() {
         const recipient = getArg("--recipient") || process.argv[3];
         const amount = getArg("--amount") || process.argv[4];
         const timelock = getArg("--timelock") || process.argv[5];
-        const secretHashInput = getArg("--secret-hash") || process.argv[6]; // Can be hex string or comma-separated
+        const secretHashInput = getArg("--secret-hash") || process.argv[6];
 
         if (!recipient || !amount || !timelock || !secretHashInput) {
           console.error(`❌ Error: Missing arguments for initiate`);
           console.error(
-            `   Usage: tsx cli/session-execute.ts --function initiate --recipient <address> --amount <amount> --timelock <seconds> --secret-hash <hash>`,
+            `   Usage: tsx cli/tests/test_initiate_v2.ts initiate <recipient> <amount> <timelock> <secret_hash>`,
           );
           console.error(`   Secret hash can be:`);
           console.error(
@@ -216,13 +263,11 @@ async function executeSessionTransaction() {
         let secretHashArray: string[];
 
         if (secretHashInput.includes(",")) {
-          // Comma-separated format
           secretHashArray = secretHashInput
-            .replace(/[\[\]\s]/g, "") // Remove brackets and spaces
+            .replace(/[\[\]\s]/g, "")
             .split(",")
             .map((h) => h.trim());
         } else {
-          // Full hex string format - split into 8 u32 chunks
           const cleanHex = secretHashInput.replace("0x", "");
           if (cleanHex.length !== 64) {
             console.error(
@@ -238,7 +283,6 @@ async function executeSessionTransaction() {
           }
         }
 
-        // Ensure we have exactly 8 values
         if (secretHashArray.length !== 8) {
           console.error(
             `❌ Error: Secret hash must have exactly 8 u32 values, got ${secretHashArray.length}`,
@@ -248,14 +292,12 @@ async function executeSessionTransaction() {
 
         console.log(`📝 Secret hash (u32 array):`, secretHashArray);
 
-        // Manually build calldata for initiate
-        // fn initiate(redeemer: ContractAddress, timelock: u128, amount: u256, secret_hash: [u32; 8])
         const initiateCalldata = [
-          recipient, // redeemer: ContractAddress
-          timelock, // timelock: u128 (as string)
-          amount, // amount.low: u128 (as string)
-          "0", // amount.high: u128
-          ...secretHashArray, // secret_hash: [u32; 8] - 8 individual u32 values
+          recipient,
+          timelock,
+          amount,
+          "0",
+          ...secretHashArray,
         ];
 
         htlcCall = {
@@ -276,7 +318,7 @@ async function executeSessionTransaction() {
     const methodIndex = sessionInfo.allowedMethods.findIndex(
       (m) =>
         m.contractAddress === htlcCall.contractAddress &&
-        m.selector === hash.getSelectorFromName(htlcCall.entrypoint),
+        m.selector === hash.getSelectorFromName(htlcCall.entrypoint!),
     );
 
     if (methodIndex === -1) {
@@ -289,21 +331,40 @@ async function executeSessionTransaction() {
     // Call hints indicate which allowed method index is being used
     const callHints = [methodIndex];
 
-    // Build the session execution calldata
-    const sessionCalldata = buildGasSponsoredSessionCalldata(
+    // Build the V2 session execution calldata
+    const sessionCalldata = buildGasSponsoredSessionCalldataV2(
       sessionInfo,
       [htlcCall],
       callHints,
     );
 
-    // Using V1
+    // Debug: show GUIDs and calldata structure
+    console.log("\n🔍 Debug Info:");
+    const guids = getAllowedMethodGuidsV2(sessionInfo.allowedMethods);
+    guids.forEach((guid, idx) => {
+      const methodName = ["initiate", "redeem", "refund"][idx];
+      const validations = sessionInfo.allowedMethods[idx].calldataValidations || [];
+      console.log(`   ${methodName} GUID: ${guid}`);
+      console.log(`     Validations: ${validations.length}`);
+      console.log(`     Method: ${sessionInfo.allowedMethods[idx].contractAddress}`);
+      console.log(`     Selector: ${sessionInfo.allowedMethods[idx].selector}`);
+    });
+
+    console.log("\n📦 Calldata Summary:");
+    console.log(`   Total calldata elements: ${sessionCalldata.length}`);
+    console.log(`   First 10: ${sessionCalldata.slice(0, 10).join(", ")}`);
+    console.log(`   Signature (last 3): ${sessionCalldata.slice(-3).join(", ")}`);
+
+    // Create the call to execute_gas_sponsored_session_tx_v2 on the Braavos account
     const executeCall: Call = {
       contractAddress: sessionInfo.braavosAccount,
-      entrypoint: "execute_gas_sponsored_session_tx",
+      entrypoint: "execute_gas_sponsored_session_tx_v2",
       calldata: sessionCalldata,
     };
 
-    console.log(`\n🚀 Executing session transaction...`);
+    console.log(`\n🎯 V2 Entrypoint Selector: ${hash.getSelectorFromName("execute_gas_sponsored_session_tx_v2")}`);
+
+    console.log(`\n🚀 Executing V2 session transaction...`);
 
     // Execute the transaction
     const response = await callerAccount.execute(executeCall);
@@ -322,6 +383,7 @@ async function executeSessionTransaction() {
     if (receipt.isSuccess()) {
       console.log(`✅ Transaction confirmed successfully!`);
       console.log(`   Transaction hash: ${response.transaction_hash}`);
+      console.log(`\n📝 Note: This used execute_gas_sponsored_session_tx_v2 with calldata validation`);
     } else {
       console.error(`❌ Transaction failed`);
       console.error(`   Transaction hash: ${response.transaction_hash}`);
@@ -340,4 +402,4 @@ async function executeSessionTransaction() {
 }
 
 // Run the script
-executeSessionTransaction();
+executeSessionTransactionV2();

@@ -47,6 +47,12 @@ export type Secp256r1KeyPair = {
   };
 };
 
+export type CalldataValidation = {
+  offset: number;
+  value: string;
+  validation_type: number;
+};
+
 export type SessionInfo = {
   sessionHash: string;
   caller: string;
@@ -55,6 +61,7 @@ export type SessionInfo = {
   allowedMethods: Array<{
     contractAddress: string;
     selector: string;
+    calldataValidations?: CalldataValidation[]; // V2 only
   }>;
   spendingLimits: Array<{
     tokenAddress: string;

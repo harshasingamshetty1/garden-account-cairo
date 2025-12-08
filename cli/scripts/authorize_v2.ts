@@ -58,21 +58,32 @@ export async function setupHTLCSessionV2(params: SetupHTLCSessionV2Params) {
       },
     ];
 
+    console.log("📜 Allowed Methods:");
+    console.log(`   - initiate (${allowedMethods[0].selector})`);
+    console.log(`   - redeem (${allowedMethods[1].selector})`);
+    console.log(`   - refund (${allowedMethods[2].selector})\n`);
+
+    // Default: no calldata validations (empty arrays for each method)
     const finalCalldataValidations = calldataValidations || [[], [], []];
 
-    if (calldataValidations && calldataValidations.length > 0) {
+    if (calldataValidations && calldataValidations.some((v) => v.length > 0)) {
       console.log("🔍 Calldata Validations:");
+      const methodNames = ["initiate", "redeem", "refund"];
       calldataValidations.forEach((validations, methodIndex) => {
         if (validations.length > 0) {
-          console.log(`   Method ${methodIndex}:`);
+          console.log(`   ${methodNames[methodIndex]}:`);
           validations.forEach((v) => {
+            const validationType =
+              v.validation_type === CalldataValidationType.Eq ? "Eq" : "Unknown";
             console.log(
-              `     - Offset ${v.offset}: ${v.value} (${v.validation_type === CalldataValidationType.Eq ? "Eq" : "Unknown"})`,
+              `     - Offset ${v.offset}: ${v.value} (${validationType})`,
             );
           });
         }
       });
       console.log("");
+    } else {
+      console.log("🔍 Calldata Validations: None (all methods unrestricted)\n");
     }
 
     const spendingLimits = [
@@ -87,6 +98,7 @@ export async function setupHTLCSessionV2(params: SetupHTLCSessionV2Params) {
 
     console.log("💰 Spending Limits:");
     console.log(`   Token: ${config.htlcTokenAddress}`);
+    console.log(`   Amount: Unlimited\n`);
 
     const chainId = await provider.getChainId();
     const typedData = createGasSponsoredSessionTypedDataV2({
@@ -109,15 +121,16 @@ export async function setupHTLCSessionV2(params: SetupHTLCSessionV2Params) {
     const sessionHash = calculateSessionHash(typedData, creds.address);
     console.log(`\n🔑 Session Hash: ${sessionHash}`);
 
-    // Save session information
+    // Save session information with calldata validations
     const sessionInfo: SessionInfo = {
       sessionHash,
       caller: sessionOwner,
       executeAfter,
       executeBefore,
-      allowedMethods: allowedMethods.map((m) => ({
+      allowedMethods: allowedMethods.map((m, index) => ({
         contractAddress: m.contractAddress,
         selector: m.selector,
+        calldataValidations: finalCalldataValidations[index],
       })),
       spendingLimits: spendingLimits.map((l) => ({
         tokenAddress: l.tokenAddress,
@@ -154,16 +167,16 @@ export async function setupHTLCSessionV2(params: SetupHTLCSessionV2Params) {
   }
 }
 
-// if (require.main === module) {
-//   const SESSION_OWNER = process.env.SESSION_OWNER || process.argv[2];
+if (require.main === module) {
+  const SESSION_OWNER = process.env.SESSION_OWNER || process.argv[2];
 
-//   if (!SESSION_OWNER) {
-//     console.error("❌ SESSION_OWNER parameter required");
-//     process.exit(1);
-//   }
+  if (!SESSION_OWNER) {
+    console.error("❌ SESSION_OWNER parameter required");
+    process.exit(1);
+  }
 
-//   setupHTLCSessionV2({
-//     sessionOwner: SESSION_OWNER,
-//     // calldataValidations: validations, // Uncomment to use validations
-//   });
-// }
+  setupHTLCSessionV2({
+    sessionOwner: SESSION_OWNER,
+    // calldataValidations: validations, // Uncomment to use validations
+  });
+}

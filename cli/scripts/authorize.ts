@@ -9,6 +9,7 @@ import { writeJsonFile } from "../helpers/file";
 import {
   createGasSponsoredSessionTypedData,
   MAX_UINT256,
+  MIN_UINT256,
 } from "../helpers/session";
 import { hash } from "starknet";
 import path from "path";
@@ -59,8 +60,8 @@ export async function setupHTLCSession(params: SetupHTLCSessionParams) {
       {
         tokenAddress: config.htlcTokenAddress,
         amount: {
-          low: MAX_UINT256.LOW,
-          high: MAX_UINT256.HIGH,
+          low: MIN_UINT256.LOW,
+          high: MIN_UINT256.HIGH,
         },
       },
     ];
@@ -121,13 +122,13 @@ export async function setupHTLCSession(params: SetupHTLCSessionParams) {
   }
 }
 
-// if (require.main === module) {
-//   const SESSION_OWNER = process.env.SESSION_OWNER;
+if (require.main === module) {
+  const SESSION_OWNER = process.env.SESSION_OWNER;
 
-//   if (!SESSION_OWNER) {
-//     console.error("❌ SESSION_OWNER environment variable required");
-//     process.exit(1);
-//   }
+  if (!SESSION_OWNER) {
+    console.error("❌ SESSION_OWNER environment variable required");
+    process.exit(1);
+  }
 
-//   setupHTLCSession({ sessionOwner: SESSION_OWNER });
-// }
+  setupHTLCSession({ sessionOwner: SESSION_OWNER });
+}

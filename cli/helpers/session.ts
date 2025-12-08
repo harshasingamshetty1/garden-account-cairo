@@ -79,7 +79,12 @@ export function createGasSponsoredSessionTypedData(
   };
 }
 
-export const MAX_UINT256 = {
-  LOW: "0xffffffffffffffffffffffffffffffff",
-  HIGH: "0xffffffffffffffffffffffffffffffff",
+export const MIN_UINT256 = {
+  LOW: "0x000000000000000000000000000000000",
+  HIGH: "0x000000000000000000000000000000000",
 };
+
+export const MAX_UINT256 = {
+    LOW: "0xffffffffffffffffffffffffffffffff",
+    HIGH: "0xffffffffffffffffffffffffffffffff",
+  };

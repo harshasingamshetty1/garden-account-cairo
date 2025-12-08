@@ -27,7 +27,8 @@
         "whitelist": "tsx cli/scripts/whitelist.ts",
         "add-signer": "tsx cli/scripts/add_signer.ts",
         "add-signer:ledger": "tsx cli/scripts/add_signer_ledger.ts",
-        "test-initiate": "tsx cli/tests/test_initiate.ts initiate 0x07a55af245d4a6105770e701868e364375fe48ff2b2d8ac6a3c712cc01beca26 3600 0.0001 0x0cbd0a5e,0xd68a0942,0xc7f2a01f,0x0578a41d,0x05a16814,0x501fc9e3,0xef67f1ec,0xef7f30ee",
+        "test-initiate": "tsx cli/tests/test_initiate.ts initiate 0x07a55af245d4a6105770e701868e364375fe48ff2b2d8ac6a3c712cc01beca26 10000 0.00001 0x0cbd0a5e,0xd68a0942,0xc7f2a01f,0x0578a41d,0x05a16814,0x501fc9e3,0xef67f1ec,0xef7f30ee",
+        "test-initiate:v2": "tsx cli/tests/test_initiate_v2.ts initiate 0x07a55af245d4a6105770e701868e364375fe48ff2b2d8ac6a3c712cc01beca26 10000 0.00001 0x0cbd0a5e,0xd68a0942,0xc7f2a01f,0x0578a41d,0x05a16814,0x501fc9e3,0xef67f1ec,0xef7f30ee",
         "test:ledger": "tsx cli/tests/ledger_signing.ts",
         "test:signature": "tsx cli/tests/signature_format_demo.ts"
     },
