@@ -3,7 +3,10 @@
   "version": "1.0.0",
   "description": "For the Braavos Multi Owner Account (MOA) please refer to [README_MOA.md](./README_MOA.md)",
   "main": "index.js",
+  "type": "module",
   "dependencies": {
+    "@noble/curves": "^2.0.1",
+    "@noble/hashes": "^2.0.1",
     "dotenv": "^17.2.3",
     "starknet": "^8.6.0"
   },
@@ -14,7 +17,7 @@
   "scripts": {
     "format": "prettier --write '**/*.ts'",
     "deploy": "tsx cli/deploy.ts"
-},
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/harshasingamshetty1/garden-account-cairo.git"

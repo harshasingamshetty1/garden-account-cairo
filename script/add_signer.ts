@@ -103,6 +103,10 @@ async function main() {
       ? WEBAUTHN_SIGNER_TYPE
       : SECP256R1_SIGNER_TYPE;
 
+  // Multisig threshold rules (see multisig.cairo):
+  // - 0 means "no change"
+  // - Allowed values are 0 or 2..num_signers (1 is invalid -> INVALID_MULTISIG_THRESHOLD)
+  // Use 0 by default to avoid changing multisig when adding a signer.
   const multisigThreshold =
     BigInt(process.env.MULTISIG_THRESHOLD ?? "0") || 0n;
 

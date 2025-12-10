@@ -3,9 +3,9 @@
   "sessionVersion": "V2",
   "braavosAccountAddress": "0x0632e084b86F1f7ea218E05e8c21C15bFb2C6Bde1C7877725ed3F18398627153",
   "chainId": "0x534e5f5345504f4c4941",
-  "sessionHash": "0xc8180f08569f3d1d1c57370594b8fd95e172c6d22c409c0ccad1a745594b1f",
-  "executeAfter": "1764829546",
-  "executeBefore": "2080193146",
+  "sessionHash": "0x4f142c79f722e4147df37e3716086a23f2a16055436870bef1afaff7e4c7a70",
+  "executeAfter": "1764913228",
+  "executeBefore": "2080276828",
   "sessionCaller": "0x048248450B72751Ab65c354940e89b0b8BabF281B212E31eD8F318DF43F57954",
   "sessionCallerPrivateKey": "0x04af2268a8095d1d3903aacfbe3a37489c9117c55f4d006e75088d7e90445ce3",
   "allowedMethods": [
@@ -36,7 +36,7 @@
   ],
   "restrictedAmount": "1000000000000000000",
   "signature": {
-    "r": "0x6a323069b3e26e7db95d3a9ef35dcdec64922e3323e21bc838a2ef9c63c4e66",
-    "s": "0x4e4eac9cfd156f0658c68eef150241fadc443f351928580845cf7cf2df8c8ab"
+    "r": "0x76960b5e5a0bea8de6140e58ec51122cbaae6fb6f3bdc736bcfb9b8161c02c8",
+    "s": "0x3494e4c919078da025b313c197a8b5aa35b53daf428040d6eadd77836a872aa"
   }
 }
