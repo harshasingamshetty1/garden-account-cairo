@@ -28,16 +28,16 @@ import { deployer, splitUint128, toFelt } from "../utils";
 export function buildDeploymentParams(
   options: DeploymentParamsOptions,
 ): bigint[] {
-  const signerType = BigInt(DeploymentSignerType.Empty);
-  const multisigThreshold = options.multisigThreshold; // 0 means no multisig
-  const withdrawalLimit = options.withdrawalLimit;
-  const feeRate = options.feeRate;
-  const starkFeeRate = options.starkFeeRate;
-  const secpX = options.secpX;
-  const secpY = options.secpY;
+  const signerType = options.signerType ?? DeploymentSignerType.Empty;
+  const multisigThreshold = options.multisigThreshold ?? 0n; // 0 means no multisig
+  const withdrawalLimit = options.withdrawalLimit ?? 0n;
+  const feeRate = options.feeRate ?? 0n;
+  const starkFeeRate = options.starkFeeRate ?? 0n;
+  const secpX = options.secpX ?? 0n;
+  const secpY = options.secpY ?? 0n;
 
-  const [secpXLow, secpXHigh] = splitUint128(secpX!);
-  const [secpYLow, secpYHigh] = splitUint128(secpY!);
+  const [secpXLow, secpXHigh] = splitUint128(secpX);
+  const [secpYLow, secpYHigh] = splitUint128(secpY);
 
   return [
     BigInt(BRAAVOS_ACCOUNT_CLASS_HASH), // 1 - account_implementation

@@ -25,4 +25,5 @@ export interface DeploymentParamsOptions {
   starkFeeRate?: bigint;
   secpX?: bigint;
   secpY?: bigint;
+  signerType?: DeploymentSignerType;
 }

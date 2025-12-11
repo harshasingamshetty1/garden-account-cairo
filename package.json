@@ -8,6 +8,7 @@
     "@noble/curves": "^2.0.1",
     "@noble/hashes": "^2.0.1",
     "dotenv": "^17.2.3",
+    "secp256r1": "^0.0.3",
     "starknet": "^8.6.0"
   },
   "devDependencies": {

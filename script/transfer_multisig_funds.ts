@@ -37,7 +37,7 @@ dotenv.config(); // Also load root .env
 type NetworkType = "sepolia" | "mainnet" | "devnet";
 
 // SignerType values from src/signers/signer_type.cairo
-const STARK_SIGNER_TYPE = 0n;
+const STARK_SIGNER_TYPE = 1n;
 const SECP256R1_SIGNER_TYPE = 2n;
 
 // STRK token address on Sepolia (default)
@@ -48,6 +48,12 @@ function splitUint256(value: bigint): { low: bigint; high: bigint } {
   const mask = (1n << 128n) - 1n;
   const low = value & mask;
   const high = value >> 128n;
+
+  // Debug output
+  console.log(`  splitUint256(${value.toString()})`);
+  console.log(`    low:  ${low.toString()} (0x${low.toString(16)})`);
+  console.log(`    high: ${high.toString()} (0x${high.toString(16)})`);
+
   return { low, high };
 }
 
@@ -62,21 +68,39 @@ function hexToBigInt(hex: string): bigint {
 
 /**
  * Extract x and y coordinates from uncompressed secp256r1 public key
+ * Input format: 0x04 + 64 hex chars (x) + 64 hex chars (y) = 130 chars total
  */
 function extractXYFromPubKey(pubKeyHex: string): { x: bigint; y: bigint } {
-  const cleaned = pubKeyHex.startsWith("0x") ? pubKeyHex.slice(2) : pubKeyHex;
-  const key = cleaned.startsWith("04") ? cleaned.slice(2) : cleaned;
-  
-  if (key.length !== 128) {
-    throw new Error(`Invalid public key length. Expected 128 hex chars, got ${key.length}`);
+  // Remove 0x prefix if present
+  let cleaned = pubKeyHex.startsWith("0x") ? pubKeyHex.slice(2) : pubKeyHex;
+
+  // Remove leading 04 if present (uncompressed marker)
+  if (cleaned.startsWith("04")) {
+    cleaned = cleaned.slice(2);
   }
 
-  const xHex = key.slice(0, 64);
-  const yHex = key.slice(64, 128);
-  return {
-    x: hexToBigInt(xHex),
-    y: hexToBigInt(yHex),
-  };
+  // Should now be 128 hex chars (64 for x, 64 for y)
+  if (cleaned.length !== 128) {
+    throw new Error(
+      `Invalid secp256r1 pubkey format. Expected 128 hex chars (64 x + 64 y), got ${cleaned.length}. ` +
+      `Full string: 0x${cleaned}`
+    );
+  }
+
+  // Split into x and y (32 bytes each = 64 hex chars each)
+  const xHex = cleaned.slice(0, 64);
+  const yHex = cleaned.slice(64, 128);
+
+  const x = BigInt("0x" + xHex);
+  const y = BigInt("0x" + yHex);
+
+  console.log(`\n=== Extracted secp256r1 coordinates ===`);
+  console.log(`x (hex): 0x${xHex}`);
+  console.log(`x (dec): ${x.toString()}`);
+  console.log(`y (hex): 0x${yHex}`);
+  console.log(`y (dec): ${y.toString()}\n`);
+
+  return { x, y };
 }
 
 /**
@@ -122,46 +146,50 @@ async function signHashSecp256r1(
     }
   }
 
-  // Sign using secp256r1 with @noble/curves (supports pre-hashed data)
+  // Sign using secp256r1 package (simpler and more reliable)
   let r: bigint, s: bigint;
   try {
-    // Import p256 from @noble/curves
-    // @ts-ignore - @noble/curves/p256 exists at runtime
-    const p256Module = await import("@noble/curves/p256");
-    const p256 = p256Module.p256;
+    // Dynamic import for secp256r1 (CommonJS module)
+    // @ts-ignore - secp256r1 may not have TypeScript definitions
+    const secp256r1 = await import("secp256r1");
     
-    if (!p256 || typeof p256.sign !== "function") {
-      throw new Error("p256.sign is not available");
-    }
-    
-    // Ensure hashed is exactly 32 bytes (Uint8Array)
+    // Ensure hashed is exactly 32 bytes (Buffer)
     if (hashed.length !== 32) {
       throw new Error(`Expected 32-byte hash, got ${hashed.length} bytes`);
     }
     
-    // Use the private key directly from the buffer (32 bytes)
-    // ecdh.getPrivateKey() should return the raw private key bytes
-    const privateKeyBytes = new Uint8Array(privKey);
-    
-    if (privateKeyBytes.length !== 32) {
-      throw new Error(`Expected 32-byte private key, got ${privateKeyBytes.length} bytes`);
+    // Ensure private key is exactly 32 bytes
+    if (privKey.length !== 32) {
+      throw new Error(`Expected 32-byte private key, got ${privKey.length} bytes`);
     }
     
-    // Sign the hash with the private key
-    const signature = p256.sign(hashed, privateKeyBytes);
+    // Convert hashed Uint8Array to Buffer for secp256r1
+    const hashBuffer = Buffer.from(hashed);
     
-    // Extract r and s from signature
-    r = signature.r;
-    s = signature.s;
+    // Sign the hash with the private key using secp256r1
+    // secp256r1.sign returns { signature: Buffer (64 bytes), recovery: number }
+    // The signature buffer contains: first 32 bytes = r, last 32 bytes = s
+    const signatureResult = secp256r1.default ? secp256r1.default.sign(hashBuffer, privKey) : secp256r1.sign(hashBuffer, privKey);
+    
+    if (!signatureResult || !signatureResult.signature || signatureResult.signature.length !== 64) {
+      throw new Error(`Invalid signature from secp256r1: expected 64 bytes, got ${signatureResult?.signature?.length ?? 0}`);
+    }
+    
+    // Extract r and s from the 64-byte signature buffer
+    const rBuffer = signatureResult.signature.slice(0, 32);
+    const sBuffer = signatureResult.signature.slice(32, 64);
+    
+    // Convert to bigint
+    r = BigInt("0x" + rBuffer.toString("hex"));
+    s = BigInt("0x" + sBuffer.toString("hex"));
   } catch (e) {
-    // If @noble/curves fails, provide clear error message
+    // If secp256r1 fails, provide clear error message
     const errorMsg = e instanceof Error ? e.message : String(e);
     throw new Error(
-      `Failed to sign with secp256r1 using @noble/curves: ${errorMsg}\n` +
-      `Please ensure @noble/curves is properly installed:\n` +
-      `  npm install @noble/curves @noble/hashes\n` +
-      `If the package is installed, try:\n` +
-      `  npm uninstall @noble/curves && npm install @noble/curves@latest`
+      `Failed to sign with secp256r1: ${errorMsg}\n` +
+      `Please ensure secp256r1 is properly installed:\n` +
+      `  npm install secp256r1\n` +
+      `If the package is installed, verify it's compatible with your Node.js version.`
     );
   }
 
@@ -201,36 +229,103 @@ function createMultisigSigner(
         paymasterData: tx.paymasterData || [],
         accountDeploymentData: tx.accountDeploymentData || [],
         compiledCalldata: tx.compiledCalldata || []
-    });
+      });
 
-      // Sign with Stark signer (txHash is already a Hex string)
+      console.log(`\n=== Transaction Hash ===`);
+      console.log(`${txHash}\n`);
+
+      // ========== Sign with Stark Signer ==========
       const starkSig = ec.starkCurve.sign(txHash, starkPrivateKey);
+      const starkR = BigInt(starkSig.r);
+      const starkS = BigInt(starkSig.s);
+      
+      console.log(`=== Stark Signature ===`);
+      console.log(`r: ${starkR.toString()}`);
+      console.log(`s: ${starkS.toString()}\n`);
 
-      // Sign with Secp256r1 signer (convert to bigint for secp256r1 signing)
+      // ========== Sign with Secp256r1 Signer ==========
       const hashBigInt = BigInt(txHash);
       const secp256r1Sig = await signHashSecp256r1(hashBigInt, secp256r1PrivateKey, secp256r1PubKey);
+      
+      console.log(`=== Secp256r1 Signature ===`);
+      console.log(`r: ${secp256r1Sig.r.toString()}`);
+      console.log(`s: ${secp256r1Sig.s.toString()}`);
+      console.log(`pub_x: ${secp256r1PubKey.x.toString()}`);
+      console.log(`pub_y: ${secp256r1PubKey.y.toString()}\n`);
 
-      // Format signatures according to Braavos multisig format:
-      // [STARK_SIGNER_TYPE, r_stark, s_stark, SECP256R1_SIGNER_TYPE, pub_x.low, pub_x.high, pub_y.low, pub_y.high, r_secp.low, r_secp.high, s_secp.low, s_secp.high]
+      // ========== Format Multisig Signature ==========
+      // Order matters! Cairo contract expects this exact order:
+      // [signer_type_1, stark_r, stark_s, signer_type_2, secp_x_low, secp_x_high, secp_y_low, secp_y_high, secp_r_low, secp_r_high, secp_s_low, secp_s_high]
+      
+      console.log(`=== Splitting secp256r1 components into u128 ===`);
+      console.log(`pub_x: ${secp256r1PubKey.x.toString()}`);
       const { low: xLow, high: xHigh } = splitUint256(secp256r1PubKey.x);
+      console.log(`pub_y: ${secp256r1PubKey.y.toString()}`);
       const { low: yLow, high: yHigh } = splitUint256(secp256r1PubKey.y);
+      console.log(`sig_r: ${secp256r1Sig.r.toString()}`);
       const { low: rLow, high: rHigh } = splitUint256(secp256r1Sig.r);
+      console.log(`sig_s: ${secp256r1Sig.s.toString()}`);
       const { low: sLow, high: sHigh } = splitUint256(secp256r1Sig.s);
 
-      return [
-        toHex(STARK_SIGNER_TYPE),
-        toHex(BigInt(starkSig.r)),
-        toHex(BigInt(starkSig.s)),
-        toHex(SECP256R1_SIGNER_TYPE),
-        toHex(xLow),
-        toHex(xHigh),
-        toHex(yLow),
-        toHex(yHigh),
-        toHex(rLow),
-        toHex(rHigh),
-        toHex(sLow),
-        toHex(sHigh),
+      // Build signature array as felt252 values
+      const signatureArray = [
+        STARK_SIGNER_TYPE.toString(),        // [0] Signer type: Stark = 0
+        starkR.toString(),                    // [1] Stark r
+        starkS.toString(),                    // [2] Stark s
+        SECP256R1_SIGNER_TYPE.toString(),    // [3] Signer type: Secp256r1 = 2
+        xLow.toString(),                      // [4] Secp256r1 pub_x low
+        xHigh.toString(),                     // [5] Secp256r1 pub_x high
+        yLow.toString(),                      // [6] Secp256r1 pub_y low
+        yHigh.toString(),                     // [7] Secp256r1 pub_y high
+        rLow.toString(),                      // [8] Secp256r1 sig r low
+        rHigh.toString(),                     // [9] Secp256r1 sig r high
+        sLow.toString(),                      // [10] Secp256r1 sig s low
+        sHigh.toString(),                     // [11] Secp256r1 sig s high
       ];
+
+//       const signatureArray = [
+//   SECP256R1_SIGNER_TYPE.toString(), // [0] strong signer type
+//   xLow.toString(),                  // [1] secp_x_low
+//   xHigh.toString(),                 // [2] secp_x_high
+//   yLow.toString(),                  // [3] secp_y_low
+//   yHigh.toString(),                 // [4] secp_y_high
+//   rLow.toString(),                  // [5] secp_r_low
+//   rHigh.toString(),                 // [6] secp_r_high
+//   sLow.toString(),                  // [7] secp_s_low
+//   sHigh.toString(),                 // [8] secp_s_high
+//   STARK_SIGNER_TYPE.toString(),     // [9] stark signer type
+//   starkR.toString(),                // [10] stark r
+//   starkS.toString(),                // [11] stark s
+// ];
+
+      console.log(`\n=== Signature Array (length: ${signatureArray.length}) ===`);
+      console.log(`[0] STARK_SIGNER_TYPE: ${signatureArray[0]}`);
+      console.log(`[1] stark_r: ${signatureArray[1]}`);
+      console.log(`[2] stark_s: ${signatureArray[2]}`);
+      console.log(`[3] SECP256R1_SIGNER_TYPE: ${signatureArray[3]}`);
+      console.log(`[4] secp_x_low: ${signatureArray[4]}`);
+      console.log(`[5] secp_x_high: ${signatureArray[5]}`);
+      console.log(`[6] secp_y_low: ${signatureArray[6]}`);
+      console.log(`[7] secp_y_high: ${signatureArray[7]}`);
+      console.log(`[8] secp_r_low: ${signatureArray[8]}`);
+      console.log(`[9] secp_r_high: ${signatureArray[9]}`);
+      console.log(`[10] secp_s_low: ${signatureArray[10]}`);
+      console.log(`[11] secp_s_high: ${signatureArray[11]}\n`);
+
+      // Return as hex-encoded strings (Starknet RPC expects felt252 as hex or decimal strings)
+      const hexSig = signatureArray.map(val => {
+        const bigVal = BigInt(val);
+        // Keep as hex for clarity
+        return "0x" + bigVal.toString(16);
+      });
+
+      console.log(`=== Hex Format (What RPC receives) ===`);
+      hexSig.forEach((h, idx) => {
+        console.log(`[${idx}] ${h}`);
+      });
+      console.log();
+
+      return hexSig;
     },
   };
 }
@@ -266,7 +361,7 @@ async function main() {
   const secp256r1PrivateKey = process.env.SECP256R1_PRIVATE_KEY;
   const secp256r1PubKeyHex = process.env.SECP256R1_PUBKEY;
   const targetAddress = process.env.TARGET_ADDRESS;
-  const strkTokenAddress = process.env.STRK_TOKEN_ADDRESS || SEPOLIA_STRK_TOKEN;
+  const strkTokenAddress = process.env.TARGET_CONTRACT || SEPOLIA_STRK_TOKEN;
 
   if (!braavosAddress || !starkPrivateKey || !secp256r1PrivateKey || !secp256r1PubKeyHex || !targetAddress) {
     console.error(
@@ -285,6 +380,50 @@ async function main() {
 
   // Clean private key (remove 0x if present)
   const cleanSecp256r1Key = secp256r1PrivateKey.replace(/^0x/, "");
+
+  // Validate SECP256R1 key format
+  if (cleanSecp256r1Key.length !== 64) {
+    throw new Error(`Invalid SECP256R1_PRIVATE_KEY length. Expected 64 hex chars, got ${cleanSecp256r1Key.length}`);
+  }
+
+  // Validate public key format
+  const cleanedPubKey = secp256r1PubKeyHex.startsWith("0x") ? secp256r1PubKeyHex.slice(2) : secp256r1PubKeyHex;
+  if (cleanedPubKey.startsWith("04") ? cleanedPubKey.length !== 130 : cleanedPubKey.length !== 128) {
+    throw new Error(`Invalid SECP256R1_PUBKEY format. Expected 0x04 + 128 hex chars or 128 hex chars, got ${cleanedPubKey.length}`);
+  }
+
+  // Derive public key from the provided private key and ensure it matches the supplied pubkey
+  try {
+    // @ts-ignore - secp256r1 may not ship TypeScript types
+    const secpModule = await import("secp256r1");
+    const secp = secpModule.default ?? secpModule;
+    const privBytes = Buffer.from(cleanSecp256r1Key, "hex");
+    const derivedPub = secp.publicKeyCreate(privBytes, false); // uncompressed (65 bytes, starts with 0x04)
+    const derivedPubHex = "0x" + derivedPub.toString("hex");
+    const normalizedProvided = secp256r1PubKeyHex.toLowerCase();
+
+    if (derivedPubHex.toLowerCase() !== normalizedProvided) {
+      throw new Error(
+        `SECP256R1 key mismatch!\n` +
+        `  Derived from private key: ${derivedPubHex}\n` +
+        `  Provided in env:          ${normalizedProvided}`
+      );
+    }
+    console.log(`✅ SECP256R1 private key matches public key\n`);
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    if (msg.includes("SECP256R1 key mismatch")) {
+      throw e; // Re-throw our custom error
+    }
+    throw new Error(`Failed to derive/verify SECP256R1 pubkey: ${msg}`);
+  }
+
+  console.log("=== Signers Configuration ===");
+  console.log(`Stark Signer (DEPLOYER): ${starkPrivateKey.slice(0, 10)}...${starkPrivateKey.slice(-8)}`);
+  console.log(`SECP256R1 Private Key: ${secp256r1PrivateKey.slice(0, 10)}...${secp256r1PrivateKey.slice(-8)}`);
+  console.log(`SECP256R1 Public Key: ${secp256r1PubKeyHex.slice(0, 20)}...${secp256r1PubKeyHex.slice(-20)}`);
+  console.log(`SECP256R1 PubKey (x, y): (${secp256r1PubKey.x.toString()}, ${secp256r1PubKey.y.toString()})`);
+  console.log(`Multisig Threshold: 2 (both signers required)\n`);
 
   // Create multisig signer
   const multisigSigner = createMultisigSigner(
@@ -350,12 +489,31 @@ async function main() {
       console.warn("   Continuing anyway...\n");
     }
 
+    // Estimate fee and apply aggressive buffer to avoid out-of-gas in validate
+    const feeEstimate = await account.estimateInvokeFee([transferCall]);
+    const gasConsumed = BigInt(feeEstimate.gas_consumed ?? 0n);
+    const gasPrice = BigInt(feeEstimate.gas_price ?? 0n);
+    // Apply 50% buffer + enforce minimum 500k gas for multisig validation
+    const bufferedGas = ((gasConsumed * 15n) / 10n) > BigInt(500000) 
+      ? (gasConsumed * 15n) / 10n 
+      : BigInt(500000);
+
+    const resourceBounds = {
+      l2_gas: {
+        max_amount: "0x" + bufferedGas.toString(16),
+        max_price_per_unit: "0x" + gasPrice.toString(16),
+      },
+      l1_gas: { max_amount: "0x0", max_price_per_unit: "0x0" },
+      l1_data_gas: { max_amount: "0x0", max_price_per_unit: "0x0" },
+    } as const;
+
+    console.log("⚙️ Resource bounds (with buffer):", resourceBounds);
     console.log("⏳ Submitting multisig transaction...");
     console.log("   (Requires signatures from both Stark and Secp256r1 signers)\n");
 
     let transaction_hash: string;
     try {
-      const result = await account.execute([transferCall]);
+      const result = await account.execute([transferCall], undefined, { resourceBounds });
       transaction_hash = result.transaction_hash;
     } catch (executeErr: any) {
       // Enhanced error for execute failures
