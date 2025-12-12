@@ -141,3 +141,5 @@ node.json
 # cli - ignore all data files
 cli/data/*.json
 cli/.env
+
+node_modules/
