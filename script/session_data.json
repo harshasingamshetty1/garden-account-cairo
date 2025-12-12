@@ -1,0 +1,37 @@
+{
+  "sessionHash": "0x5351f0994515594c26968b944815222cac9c7ece56229990cefc734f96b0b04",
+  "braavosAccountAddress": "0x07f5C392769DF4781312a704aA1000dAb0C91c5bdAF4f3fbEF00FAF4a87Ce548",
+  "sessionCaller": "0x048248450B72751Ab65c354940e89b0b8BabF281B212E31eD8F318DF43F57954",
+  "tokenAddress": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+  "targetAddress": "0x048248450B72751Ab65c354940e89b0b8BabF281B212E31eD8F318DF43F57954",
+  "chainId": "0x534e5f5345504f4c4941",
+  "executeAfter": 1765545650,
+  "executeBefore": 1765632110,
+  "allowedMethodGuids": [
+    "0x56ec592a1783eae13569f9bcb888a7fe9bd4f3a3db7d1365e2177044ac8db03"
+  ],
+  "spendingLimits": [
+    {
+      "tokenAddress": "0x04718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d",
+      "amount": {
+        "low": "340282366920938463463374607431768211455",
+        "high": "340282366920938463463374607431768211455"
+      }
+    }
+  ],
+  "calldataValidations": [
+    [
+      {
+        "offset": 0,
+        "value": "0x048248450B72751Ab65c354940e89b0b8BabF281B212E31eD8F318DF43F57954",
+        "validation_type": 0
+      }
+    ]
+  ],
+  "signature": {
+    "r": "2323403259325246799455434460599573467414256151113922971472842435085520934756",
+    "s": "1705284308077230553468878448157330634662901406788972640331532861104183208736"
+  },
+  "ledgerPublicKey": "0x031d478514c8dd57aa2b545e438cd69f49900d15c49794271b1ea59965cca623",
+  "createdAt": "2025-12-12T13:22:01.004Z"
+}

@@ -31,6 +31,9 @@ async function main() {
   const pubkey = await ledgerSigner.getPubKey();
   console.log("✅ Public Key:", pubkey);
 
+
+  transport.close();
+  console.log("✅ Ledger connection closed");
   // // Initialize provider and account
   // const provider = new Provider({ nodeUrl: rpcUrl });
   // const ledgerAccount = new Account({provider:provider, address: accountAddress, signer: ledgerSigner});
