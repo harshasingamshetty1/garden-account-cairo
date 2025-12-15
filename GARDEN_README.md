@@ -1,0 +1,1 @@
+# This repo has the contracts for the garden smart solver which will manage funds
